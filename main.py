@@ -14,7 +14,9 @@ import pickle
 import json
 # import gnosis.xml.pickle
 import os
-
+import socket
+import sys
+import requests
 
 ###################################################################
 # Functions
@@ -79,10 +81,10 @@ def addMeal():
         else:
             weeklyMeals.update({subDictName: dailyMeal})
             messagebox.showinfo("Info", "Your " + subDictName + " meal was added.")
-    # display dictionary
-    for x in weeklyMeals:
-        print(x)
-        print(weeklyMeals[x])
+    # display dictionary - for test purpose only
+    #for x in weeklyMeals:
+    #    print(x)
+    #    print(weeklyMeals[x])
 
 def iterateNestedDict(weekly):
     newWeekly = "Your current weekly meal plan:\n"
@@ -103,7 +105,8 @@ def iterateNestedDict(weekly):
 
 def displayWeekly():
     # Check if a file exists
-    path = "C:\\Users\\angel\\PycharmProjects\\interface01\\"
+    # path = "C:\\Users\\angel\\PycharmProjects\\interface01\\"
+    path = os.getcwd()
     dateModified = 0
     currentWeekly = ""
     #dir_list = os.listdir(path)
@@ -111,7 +114,7 @@ def displayWeekly():
     for x in os.listdir():
         # Check if txt file exists
         if x.endswith(".txt"):
-            textFileFound = path + x
+            textFileFound = path + "\\" + x
             # get date of last modification
             timestampMod = os.path.getmtime(textFileFound)
             if timestampMod > dateModified:
@@ -121,7 +124,7 @@ def displayWeekly():
         # open newest text file
         for x in os.listdir():
             if x.endswith(".txt"):
-                textFileFound = path + x
+                textFileFound = path + "\\" + x
                 if os.path.getmtime(textFileFound) == dateModified:
                     if "binary" in textFileFound:
                         # Read binary file
@@ -208,9 +211,38 @@ def saveWeekly():
     f.close()
     messagebox.showinfo("Info", "Your weekly meal plan meal was saved in: " + switchFilePrefix.get(str(saveMode)) + " format.")
 
-# def download
+    # create client socket
+    ip = "127.0.0.1"
+    port = 12222
+    #bufferSize = 1024
 
+    # create corresponding client
+    # !!!!!!!!!! only works if ServerSave.py is started from console !!!!!!!!
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    except socket.error as err:
+        messagebox.showinfo("Info", "Unable to create socket client.")
 
+    try:
+        s.connect((ip, port))
+    except socket.error as err:
+        messagebox.showinfo("Info", "Please run serverSave.py from console to use this feature.")
+
+    if saveMode == "1":
+        msg = pickle.dumps(weeklyMeals)
+        #asyncio.run(client_save(msg))
+        s.sendall(msg)
+    elif saveMode == "2":
+        msg = json.dumps(weeklyMeals)
+        #asyncio.run(client_save(msg))
+        s.sendall(msg.encode())
+    else:
+        pass
+    s.close()
+
+def download():
+    
+    messagebox.showinfo("Info", "Your weekly meal plan meal was downloaded")
 
 ###################################################################
 
@@ -373,7 +405,7 @@ displayMealB = Button(fOutput, text='Display', command=displayWeekly)
 
 # Button to download meal function
 labelDownload = Label(fOutput, text='Download weekly meal plan:')
-downloadMealB = Button(fOutput, text='Download')
+downloadMealB = Button(fOutput, text='Download', command=lambda:download())
 # downloadMealB.pack()
 
 # Button to close window
